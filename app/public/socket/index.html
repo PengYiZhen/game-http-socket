@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>WebSocket SocketIO</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<script src="./res/weapp.socket.io.dev.wx.js"></script>
+<!-- <script src="./res/socket.io.js"></script> -->
+<style type="text/css">
+  .Header{
+     height: 150px; width: 100%; font-size: 25px; font-weight: 700;
+	   font-style: italic; color: #666; border-bottom: 1px solid #aaa; display: flex;
+     flex-direction: column; justify-content: center; align-items: center;
+  }
+  .User-Info {
+     color: #666;  font-weight: 700;
+  }
+  #Content {
+    padding-left: 5px; font-size: 20px;
+  }
+</style>
+</head>
+<body>  
+	<div class="Header">
+      webSocket
+   </div>
+   <div class="User-Info"></div>
+	<div id="Content"></div>
+<script>
+    var roomName = prompt('填写房间名称');
+    var name = prompt('填写你的名字');
+    var headerBox = document.querySelector('.Header');
+    var userBox = document.querySelector('.User-Info');
+    var content = document.getElementById('Content');
+    const saloon = 'saloon';
+    headerBox.innerText += `:房间《${roomName}》`
+
+    getSocketConfig((config)=>{
+      console.log(config)
+      joinRoom('/saloon', roomName, config);
+    });
+    
+   /**
+    * @callback
+    * @callback => config 
+    */
+    function getSocketConfig(callback) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/wscf', true);
+      xhr.send(null);
+      xhr.responseType ="json";
+      xhr.onreadystatechange = function(e) {
+         if(xhr.readyState == 4 && xhr.status == 200) {
+            if(callback)callback(xhr.response);
+         }
+      }
+    }
+    /**
+    * @nameSpace
+    * @room
+    */
+    function joinRoom(nameSpace, room, config) {
+      const {
+         connection,
+         gameRoom1,
+         error,
+         self,
+      } = config.socket.events;
+      console.log(gameRoom1)
+      if(window.socket) window.socket.close();
+      var socket = window.socket = io(nameSpace, {
+         query: {
+           room: room,
+         },
+         transports: ["websocket"],
+      });
+      socket.on(connection, ()=>{
+         userBox.innerHTML = `<span>用户：<em style="color: #00f;">${name}</em></span><hr/>`
+      });
+      /** @Other */
+      socket.on(gameRoom1, (msg)=>{
+         var msgObj = JSON.parse(msg)
+         let div = document.createElement('div')
+         div.innerHTML = `${msgObj.name}${msgObj.name==name?'(你)':''}说：<span style='color:#000;'>${msgObj.msg}</span>`;
+         msgObj.name==name?div.style.color='#0a0':div.style.color='#a00';
+         content.append(div);
+      });
+      /** @Self */
+      socket.on(self, (msg)=>{
+        var msgObj = JSON.parse(msg)
+        let div = document.createElement('div')
+        div.innerHTML = `${msgObj.name}${msgObj.name==name?'(你)':''}说：<span style='color:#000;'>${msgObj.msg}</span>`;
+        msgObj.name==name?div.style.color='#0a0':div.style.color='#a00';
+        content.append(div);
+     });
+      headerBox.addEventListener('click',function(){
+         let msg = prompt()
+         if(msg){
+            socket.emit(gameRoom1, JSON.stringify({name: name, msg: msg}));
+         }
+      },false);
+     
+    }
+
+</script>	
+</body>	
+</html>
