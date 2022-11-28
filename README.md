@@ -6,3 +6,5 @@ demo in public index.html
 
 # Go Start
 ## npm run dev 
+
+>>> http://localhost:8001/socket/index.html
